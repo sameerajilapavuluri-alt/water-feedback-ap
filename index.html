@@ -492,9 +492,18 @@
             if (userLocation) {
                 data.location = userLocation;
                 data.hasLocation = true;
+                data.latitude = userLocation.latitude;
+                data.longitude = userLocation.longitude;
+                data.accuracy = userLocation.accuracy;
             } else {
                 data.hasLocation = false;
+                data.latitude = '';
+                data.longitude = '';
+                data.accuracy = '';
             }
+            
+            // Send to Google Sheets via Google Apps Script
+            sendToGoogleSheets(data);
             
             // In a real implementation, you would send this data to your server
             console.log('Feedback submitted:', data);
@@ -518,6 +527,50 @@
                 document.getElementById('successMessage').style.display = 'none';
             }, 5000);
         });
+
+        // Function to send data to Google Sheets
+        function sendToGoogleSheets(data) {
+            // Replace this URL with your Google Apps Script Web App URL
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+            
+            // Prepare data for Google Sheets
+            const payload = {
+                timestamp: data.timestamp,
+                submissionId: data.submissionId,
+                feeling: data.feeling || '',
+                comments: data.comments || '',
+                hasLocation: data.hasLocation,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                accuracy: data.accuracy
+            };
+            
+            // Send to Google Sheets (uncomment when you have the script URL)
+            /*
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('Successfully sent to Google Sheets:', result);
+            })
+            .catch(error => {
+                console.error('Error sending to Google Sheets:', error);
+                // Fallback: store locally if Google Sheets fails
+                const existingFeedback = JSON.parse(localStorage.getItem('chlorinationFeedback') || '[]');
+                existingFeedback.push(data);
+                localStorage.setItem('chlorinationFeedback', JSON.stringify(existingFeedback));
+            });
+            */
+            
+            // For now, just log the data (remove this when you activate Google Sheets)
+            console.log('Data ready for Google Sheets:', payload);
+        }
 
         // Initialize location detection when page loads
         document.addEventListener('DOMContentLoaded', function() {
