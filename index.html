@@ -199,18 +199,6 @@
             line-height: 1.4;
         }
 
-        .qr-info {
-            background: #fff3e0;
-            border: 1px solid #ffcc02;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #e65100;
-            text-align: center;
-            line-height: 1.4;
-        }
-
         .location-info {
             background: #f0f8f0;
             border: 1px solid #4CAF50;
@@ -350,7 +338,7 @@
                 </div>
 
                 <button type="submit" class="submit-btn">
-                    Submit Feedback | फीडबैक भेजें | ఫీడ్‌బ్యాక్ పంపండి
+                    Submit Feedback | फीडबैक भेजें | ఫీడ్‌బ్యాక్ పंपండి
                 </button>
             </form>
 
@@ -376,6 +364,83 @@
     </div>
 
     <script>
+        let userLocation = null;
+
+        // Get user's location automatically when page loads
+        function getUserLocation() {
+            const statusElement = document.getElementById('locationStatus');
+            const detailsElement = document.getElementById('locationDetails');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        userLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: new Date().toISOString()
+                        };
+
+                        statusElement.textContent = 'Location detected ✓ | स्थान मिल गया ✓ | స్థానం కనుగొనబడింది ✓';
+                        statusElement.className = 'location-status location-detected';
+                        
+                        detailsElement.innerHTML = `
+                            <strong>Coordinates:</strong> ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}<br>
+                            <strong>Accuracy:</strong> ±${Math.round(userLocation.accuracy)}m<br>
+                            <small>Location will be included with your feedback</small>
+                        `;
+
+                        // Try to get readable address
+                        getReadableAddress(userLocation.latitude, userLocation.longitude);
+                    },
+                    function(error) {
+                        let errorMessage = '';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = 'Location access denied | स्थान की अनुमति नहीं दी गई | స్థాన యాక్సెస్ నిరాకరించబడింది';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = 'Location unavailable | स्थान उपलब्ध नहीं | స్థానం అందుబాటులో లేదు';
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = 'Location timeout | स्थान समय समाप्त | స్థాన సమయం ముగిసింది';
+                                break;
+                        }
+                        
+                        statusElement.textContent = errorMessage;
+                        statusElement.className = 'location-status location-error';
+                        detailsElement.innerHTML = '<small>Feedback will be submitted without location</small>';
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 300000
+                    }
+                );
+            } else {
+                statusElement.textContent = 'Location not supported | स्थान समर्थित नहीं | స్థానం మద్దతు లేదు';
+                statusElement.className = 'location-status location-error';
+                detailsElement.innerHTML = '<small>Your device does not support location services</small>';
+            }
+        }
+
+        // Get readable address from coordinates (optional)
+        function getReadableAddress(lat, lng) {
+            // Using OpenStreetMap Nominatim API for reverse geocoding (free)
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.display_name) {
+                        const address = data.display_name;
+                        const detailsElement = document.getElementById('locationDetails');
+                        detailsElement.innerHTML += `<br><strong>Address:</strong> ${address}`;
+                    }
+                })
+                .catch(error => {
+                    console.log('Could not get readable address:', error);
+                });
+        }
+
         // Handle emoji rating selections
         document.querySelectorAll('.emoji-option').forEach(option => {
             option.addEventListener('click', function() {
@@ -404,9 +469,17 @@
                 data[key] = value;
             }
             
-            // Add timestamp
+            // Add timestamp and location data
             data.timestamp = new Date().toISOString();
             data.submissionId = 'FB_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            // Include location if available
+            if (userLocation) {
+                data.location = userLocation;
+                data.hasLocation = true;
+            } else {
+                data.hasLocation = false;
+            }
             
             // In a real implementation, you would send this data to your server
             console.log('Feedback submitted:', data);
@@ -431,31 +504,10 @@
             }, 5000);
         });
 
-        // Generate QR Code functionality
-        function generateQRCode() {
-            const currentURL = window.location.href;
-            const qrDisplay = document.getElementById('qr-display');
-            
-            // Use QR Server API to generate QR code
-            const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentURL)}`;
-            
-            qrDisplay.innerHTML = `
-                <div style="background: white; padding: 15px; border-radius: 10px; display: inline-block; margin: 10px 0;">
-                    <img src="${qrCodeURL}" alt="QR Code" style="display: block; margin: 0 auto;">
-                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
-                        Scan to access form<br>
-                        फॉर्म एक्सेस करने के लिए स्कैन करें<br>
-                        ఫారమ్ యాక్సెస్ చేయడానికి స్కాన్ చేయండి
-                    </p>
-                    <p style="margin: 10px 0 0 0; font-size: 11px; color: #999; word-break: break-all;">
-                        ${currentURL}
-                    </p>
-                </div>
-            `;
-            
-            // Hide the button after generating
-            event.target.style.display = 'none';
-        }
+        // Initialize location detection when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            getUserLocation();
+        });
     </script>
 </body>
 </html>
