@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Chlorination Feedback - AP Communities</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .question {
+            margin-bottom: 25px;
+        }
+
+        .question-text {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: 500;
+            color: #555;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .lang-line {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .emoji-rating {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .emoji-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            min-width: 80px;
+        }
+
+        .emoji-option:hover {
+            border-color: #4CAF50;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.2);
+        }
+
+        .emoji-option.selected {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .emoji {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .emoji-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .emoji-option input[type="radio"] {
+            display: none;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .anonymous-note {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1565c0;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .qr-info {
+            background: #fff3e0;
+            border: 1px solid #ffcc02;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #e65100;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .emoji-rating {
+                gap: 10px;
+            }
+            
+            .emoji-option {
+                min-width: 60px;
+                padding: 10px;
+            }
+            
+            .emoji {
+                font-size: 2em;
+            }
+            
+            .emoji-label {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚰 Water Quality Feedback</h1>
+            <p>
+                <span class="lang-line">पानी की गुणवत्ता फीडबैक</span>
+                <span class="lang-line">నీటి నాణ్యత ఫీడ్‌బ్యాక్</span>
+            </p>
+        </div>
+
+        <div class="form-container">
+            <div class="qr-info">
+                📱 <strong>QR Code Access | QR कोड एक्सेस | QR కోడ్ యాక్సెస్:</strong><br>
+                Share this form easily | आसानी से साझा करें | సులభంగా షేర్ చేయండి
+            </div>
+
+            <div class="anonymous-note">
+                🔒 <strong>Anonymous Feedback | गुमनाम फीडबैक | అనామక ఫీడ్‌బ్యాక్:</strong><br>
+                This form is completely anonymous | यह फॉर्म पूरी तरह से गुमनाम है | ఈ ఫారమ్ పూర్తిగా అనామకం
+            </div>
+
+            <form id="feedbackForm">
+                <div class="section">
+                    <div class="question">
+                        <label class="question-text">
+                            <span class="lang-line"><strong>How are you feeling about the chlorinated water?</strong></span>
+                            <span class="lang-line"><strong>क्लोरीनेशन के पानी के बारे में आप कैसा महसूस कर रहे हैं?</strong></span>
+                            <span class="lang-line"><strong>క్లోరినేట్ చేయబడిన నీటి గురించి మీరు ఎలా అనుభవిస్తున్నారు?</strong></span>
+                        </label>
+                        <div class="emoji-rating">
+                            <div class="emoji-option" data-value="very-unhappy">
+                                <input type="radio" name="feeling" value="very-unhappy" id="feeling-very-unhappy">
+                                <div class="emoji">😠</div>
+                                <div class="emoji-label">Very Unhappy<br>बहुत नाखुश<br>చాలా అసంతోషం</div>
+                            </div>
+                            <div class="emoji-option" data-value="unhappy">
+                                <input type="radio" name="feeling" value="unhappy" id="feeling-unhappy">
+                                <div class="emoji">😞</div>
+                                <div class="emoji-label">Unhappy<br>नाखुश<br>అసంతోషం</div>
+                            </div>
+                            <div class="emoji-option" data-value="neutral">
+                                <input type="radio" name="feeling" value="neutral" id="feeling-neutral">
+                                <div class="emoji">😐</div>
+                                <div class="emoji-label">Neutral<br>सामान्य<br>సాధారణ</div>
+                            </div>
+                            <div class="emoji-option" data-value="happy">
+                                <input type="radio" name="feeling" value="happy" id="feeling-happy">
+                                <div class="emoji">😊</div>
+                                <div class="emoji-label">Happy<br>खुश<br>సంతోషం</div>
+                            </div>
+                            <div class="emoji-option" data-value="very-happy">
+                                <input type="radio" name="feeling" value="very-happy" id="feeling-very-happy">
+                                <div class="emoji">😁</div>
+                                <div class="emoji-label">Very Happy<br>बहुत खुश<br>చాలా సంతోషం</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>
+                        Feedback | फीडबैक | ఫీడ్‌బ్యాక్
+                    </h3>
+                    
+                    <div class="question">
+                        <label class="question-text">
+                            <span class="lang-line">Any problems or suggestions?</span>
+                            <span class="lang-line">कोई समस्या या सुझाव?</span>
+                            <span class="lang-line">ఏవైనా సమస్యలు లేదా సూచనలు?</span>
+                        </label>
+                        <textarea name="comments" placeholder="Please share any issues, suggestions, or additional comments... | कृपया कोई भी समस्या, सुझाव साझा करें... | దయచేసి ఏవైనా సమస్యలు, సూచనలు పంచుకోండి..."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Submit Feedback | फीडबैक भेजें | ఫీడ్‌బ్యాక్ పంపండి
+                </button>
+            </form>
+
+            <div class="success-message" id="successMessage">
+                <h3>✅ Thank you for your feedback!</h3>
+                <p>
+                    आपके फीडबैक के लिए धन्यवाद!<br>
+                    మీ ఫీడ్‌బ్యాక్‌కు ధన్యవాదాలు!<br><br>
+                    Your response has been recorded anonymously.<br>
+                    आपकी प्रतिक्रिया गुमनाम रूप से दर्ज की गई है।<br>
+                    మీ ప్రతిస్పందన అనామకంగా రికార్డ్ చేయబడింది।
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle emoji rating selections
+        document.querySelectorAll('.emoji-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const radioInput = this.querySelector('input[type="radio"]');
+                const groupName = radioInput.name;
+                
+                // Remove selected class from all options in this group
+                document.querySelectorAll(`input[name="${groupName}"]`).forEach(input => {
+                    input.closest('.emoji-option').classList.remove('selected');
+                });
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                radioInput.checked = true;
+            });
+        });
+
+        // Handle form submission
+        document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // Add timestamp
+            data.timestamp = new Date().toISOString();
+            data.submissionId = 'FB_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            // In a real implementation, you would send this data to your server
+            console.log('Feedback submitted:', data);
+            
+            // Show success message
+            document.querySelector('.form-container form').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'block';
+            
+            // Optional: Store locally for demonstration (in real app, send to server)
+            const existingFeedback = JSON.parse(localStorage.getItem('chlorinationFeedback') || '[]');
+            existingFeedback.push(data);
+            localStorage.setItem('chlorinationFeedback', JSON.stringify(existingFeedback));
+            
+            // Reset form after 5 seconds for next user
+            setTimeout(() => {
+                this.reset();
+                document.querySelectorAll('.emoji-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                document.querySelector('.form-container form').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+            }, 5000);
+        });
+
+        // Generate QR Code functionality
+        function generateQRCode() {
+            const currentURL = window.location.href;
+            console.log('Generate QR code for:', currentURL);
+            alert('QR Code would be generated for: ' + currentURL + '\n\nYou can use any QR code generator service to create a code linking to this form.');
+        }
+
+        // Add QR generation button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const qrInfo = document.querySelector('.qr-info');
+            qrInfo.innerHTML += '<br><button onclick="generateQRCode()" style="margin-top: 10px; padding: 8px 16px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer;">Generate QR Code | QR कोड बनाएं | QR కోడ్ రూపొందించండి</button>';
+        });
+    </script>
+</body>
+</html>
