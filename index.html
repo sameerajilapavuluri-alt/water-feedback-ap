@@ -531,7 +531,7 @@
         // Function to send data to Google Sheets
         function sendToGoogleSheets(data) {
             // Replace this URL with your Google Apps Script Web App URL
-            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQqLKV7hiVawj6lVrNc9yxXwg_ABJNaAyEz2CvKi9MK2Il-5WfifTyZw1e3T5D5xU3/exec;
             
             // Prepare data for Google Sheets
             const payload = {
@@ -546,7 +546,7 @@
             };
             
             // Send to Google Sheets (uncomment when you have the script URL)
-            /*
+            
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'cors',
@@ -566,7 +566,7 @@
                 existingFeedback.push(data);
                 localStorage.setItem('chlorinationFeedback', JSON.stringify(existingFeedback));
             });
-            */
+            
             
             // For now, just log the data (remove this when you activate Google Sheets)
             console.log('Data ready for Google Sheets:', payload);
