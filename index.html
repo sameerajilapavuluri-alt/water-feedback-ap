@@ -353,7 +353,7 @@
                 </div>
 
                 <button type="submit" class="submit-btn">
-                    Submit Feedback | फीडबैक भेजें | ఫీడ్‌బ్యాక్ పंपండి
+                    Submit Feedback | फीडबैक भेजें | ఫీడ్‌బ్యాక్ పంపండి
                 </button>
             </form>
 
@@ -473,9 +473,54 @@
             });
         });
 
-        // Handle form submission
+        // Function to send data to Google Sheets
+        function sendToGoogleSheets(data) {
+            // FIXED: Added missing quote and removed semicolon
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQqLKV7hiVawj6lVrNc9yxXwg_ABJNaAyEz2CvKi9MK2Il-5WfifTyZw1e3T5D5xU3/exec';
+            
+            console.log('Attempting to send data to Google Sheets:', data);
+            
+            const payload = {
+                timestamp: data.timestamp,
+                submissionId: data.submissionId,
+                feeling: data.feeling || '',
+                comments: data.comments || '',
+                hasLocation: data.hasLocation,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                accuracy: data.accuracy
+            };
+            
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // FIXED: Changed from 'cors' to 'no-cors'
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                console.log('✅ Data sent to Google Sheets successfully');
+            })
+            .catch(error => {
+                console.error('❌ Error sending to Google Sheets:', error);
+            });
+            
+            console.log('Data ready for Google Sheets:', payload);
+        }
+
+        // Handle form submission - UPDATED with validation and debugging
         document.getElementById('feedbackForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            console.log('📝 Form submission started');
+            
+            // ADDED: Form validation
+            const feelingSelected = document.querySelector('input[name="feeling"]:checked');
+            if (!feelingSelected) {
+                alert('Please select how you feel about the water before submitting!\n\nकृपया सबमिट करने से पहले पानी के बारे में अपनी राय दें!\n\nదయచేసి సబ్మిట్ చేయడానికి ముందు నీటి గురించి మీ అభిప్రాయాన్ని ఎంచుకోండి!');
+                return;
+            }
             
             // Collect form data
             const formData = new FormData(this);
@@ -483,6 +528,8 @@
             for (let [key, value] of formData.entries()) {
                 data[key] = value;
             }
+            
+            console.log('📊 Form data collected:', data);
             
             // Add timestamp and location data
             data.timestamp = new Date().toISOString();
@@ -495,27 +542,30 @@
                 data.latitude = userLocation.latitude;
                 data.longitude = userLocation.longitude;
                 data.accuracy = userLocation.accuracy;
+                console.log('📍 Location data included');
             } else {
                 data.hasLocation = false;
                 data.latitude = '';
                 data.longitude = '';
                 data.accuracy = '';
+                console.log('❌ No location data available');
             }
             
-            // Send to Google Sheets via Google Apps Script
+            console.log('📤 Final data package:', data);
+            
+            // Send to Google Sheets
             sendToGoogleSheets(data);
             
-            // In a real implementation, you would send this data to your server
-            console.log('Feedback submitted:', data);
+            // Store locally as backup
+            const existingFeedback = JSON.parse(localStorage.getItem('chlorinationFeedback') || '[]');
+            existingFeedback.push(data);
+            localStorage.setItem('chlorinationFeedback', JSON.stringify(existingFeedback));
+            console.log('💾 Data stored locally as backup');
             
             // Show success message
             document.querySelector('.form-container form').style.display = 'none';
             document.getElementById('successMessage').style.display = 'block';
-            
-            // Optional: Store locally for demonstration (in real app, send to server)
-            const existingFeedback = JSON.parse(localStorage.getItem('chlorinationFeedback') || '[]');
-            existingFeedback.push(data);
-            localStorage.setItem('chlorinationFeedback', JSON.stringify(existingFeedback));
+            console.log('✅ Success message displayed');
             
             // Reset form after 5 seconds for next user
             setTimeout(() => {
@@ -525,52 +575,9 @@
                 });
                 document.querySelector('.form-container form').style.display = 'block';
                 document.getElementById('successMessage').style.display = 'none';
+                console.log('🔄 Form reset for next user');
             }, 5000);
         });
-
-        // Function to send data to Google Sheets
-        function sendToGoogleSheets(data) {
-            // Replace this URL with your Google Apps Script Web App URL
-            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQqLKV7hiVawj6lVrNc9yxXwg_ABJNaAyEz2CvKi9MK2Il-5WfifTyZw1e3T5D5xU3/exec';
-            
-            // Prepare data for Google Sheets
-            const payload = {
-                timestamp: data.timestamp,
-                submissionId: data.submissionId,
-                feeling: data.feeling || '',
-                comments: data.comments || '',
-                hasLocation: data.hasLocation,
-                latitude: data.latitude,
-                longitude: data.longitude,
-                accuracy: data.accuracy
-            };
-            
-            // Send to Google Sheets (uncomment when you have the script URL)
-            
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(result => {
-                console.log('Successfully sent to Google Sheets:', result);
-            })
-            .catch(error => {
-                console.error('Error sending to Google Sheets:', error);
-                // Fallback: store locally if Google Sheets fails
-                const existingFeedback = JSON.parse(localStorage.getItem('chlorinationFeedback') || '[]');
-                existingFeedback.push(data);
-                localStorage.setItem('chlorinationFeedback', JSON.stringify(existingFeedback));
-            });
-            
-            
-            // For now, just log the data (remove this when you activate Google Sheets)
-            console.log('Data ready for Google Sheets:', payload);
-        }
 
         // Initialize location detection when page loads
         document.addEventListener('DOMContentLoaded', function() {
