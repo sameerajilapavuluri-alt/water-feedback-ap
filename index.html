@@ -553,31 +553,77 @@
 
         // Voice recording functionality
         async function initializeVoiceRecording() {
+            console.log('🎤 Initializing voice recording...');
+            
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Check if browser supports required APIs
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Browser does not support audio recording');
+                }
                 
-                // MediaRecorder with better compatibility
-                const options = { mimeType: 'audio/webm' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options.mimeType = 'audio/mp4';
-                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                        options.mimeType = 'audio/wav';
-                        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                            options.mimeType = '';
-                        }
+                if (!window.MediaRecorder) {
+                    throw new Error('MediaRecorder not supported in this browser');
+                }
+                
+                console.log('🎤 Requesting microphone access...');
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    }
+                });
+                
+                console.log('✅ Microphone access granted');
+                
+                // Test different audio formats for better compatibility
+                let options = {};
+                const supportedTypes = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/mp4',
+                    'audio/ogg;codecs=opus',
+                    'audio/wav'
+                ];
+                
+                for (const type of supportedTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        options.mimeType = type;
+                        console.log('🎵 Using audio format:', type);
+                        break;
                     }
                 }
                 
                 mediaRecorder = new MediaRecorder(stream, options);
                 
                 mediaRecorder.ondataavailable = (event) => {
+                    console.log('📊 Audio data received:', event.data.size, 'bytes');
                     if (event.data.size > 0) {
                         audioChunks.push(event.data);
                     }
                 };
                 
+                mediaRecorder.onstart = () => {
+                    console.log('🎤 Recording started');
+                    audioChunks = []; // Clear previous chunks
+                };
+                
                 mediaRecorder.onstop = () => {
-                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    console.log('⏹️ Recording stopped. Processing audio...');
+                    
+                    if (audioChunks.length === 0) {
+                        console.error('❌ No audio data recorded');
+                        document.getElementById('voiceStatus').textContent = 
+                            'Recording failed - no audio data | रिकॉर्डिंग असफल | రికార్డింగ్ విఫలమైంది';
+                        return;
+                    }
+                    
+                    recordedAudioBlob = new Blob(audioChunks, { 
+                        type: options.mimeType || 'audio/wav' 
+                    });
+                    
+                    console.log('✅ Audio blob created:', recordedAudioBlob.size, 'bytes');
+                    
                     const audioUrl = URL.createObjectURL(recordedAudioBlob);
                     
                     // Enable play and delete buttons
@@ -591,55 +637,113 @@
                     
                     // Update status
                     document.getElementById('voiceStatus').textContent = 
-                        'Recording saved! | रिकॉर्डिंग सेव हो गई! | రికార్డింగ్ సేవ్ అయ్యింది!';
+                        `Recording saved! (${Math.round(recordedAudioBlob.size/1024)}KB) | रिकॉर्डिंग सेव हो गई! | రికార్డింగ్ సేవ్ అయ్యింది!`;
                 };
                 
-                console.log('Voice recording initialized successfully');
+                mediaRecorder.onerror = (event) => {
+                    console.error('❌ MediaRecorder error:', event.error);
+                    document.getElementById('voiceStatus').textContent = 
+                        'Recording error occurred | रिकॉर्डिंग में त्रुटि | రికార్డింగ్ లోపం';
+                };
+                
+                // Keep the stream active
+                window.audioStream = stream;
+                
+                console.log('✅ Voice recording initialized successfully');
+                document.getElementById('voiceStatus').textContent = 
+                    'Ready to record! Click the mic button | रिकॉर्ड करने को तैयार! | రికార్డ్ చేయడానికి సిద్ధం!';
+                
                 return true;
                 
             } catch (error) {
-                console.error('Error accessing microphone:', error);
-                document.getElementById('voiceStatus').textContent = 
-                    'Microphone access denied | माइक्रोफोन एक्सेस नहीं मिला | మైక్రోఫోన్ యాక్సెస్ నిరాకరించబడింది';
+                console.error('❌ Error accessing microphone:', error);
+                
+                let errorMessage = 'Microphone access denied | माइक्रोफोन एक्सेस नहीं मिला | మైక్రోఫోన్ యాక్సెస్ నిరాకరించబడింది';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Please allow microphone access and refresh | कृपया माइक्रोफोन की अनुमति दें | దయచేసి మైక్రోఫోన్ అనుమతి ఇవ్వండి';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = 'No microphone found | माइक्रोफोन नहीं मिला | మైక్రోఫోన్ కనుగొనబడలేదు';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage = 'Audio recording not supported | ऑडियो रिकॉर्डिंग समर्थित नहीं | ఆడియో రికార్డింగ్ మద్దతు లేదు';
+                }
+                
+                document.getElementById('voiceStatus').textContent = errorMessage;
                 document.getElementById('recordBtn').disabled = true;
                 return false;
             }
         }
 
-        // Handle recording button
+        // Handle recording button with better error handling
         document.getElementById('recordBtn').addEventListener('click', async function() {
+            console.log('🎤 Record button clicked. Current state:', isRecording);
+            
             if (!mediaRecorder) {
+                console.log('🎤 MediaRecorder not initialized, initializing now...');
                 const initialized = await initializeVoiceRecording();
-                if (!initialized) return;
+                if (!initialized) {
+                    console.error('❌ Failed to initialize voice recording');
+                    return;
+                }
             }
             
             if (!isRecording) {
-                // Start recording
-                audioChunks = [];
-                mediaRecorder.start();
-                isRecording = true;
-                
-                // Update UI
-                this.classList.add('recording');
-                document.getElementById('recordText').textContent = 'Stop Recording | रोकें | ఆపండి';
-                document.getElementById('voiceStatus').textContent = 'Recording... | रिकॉर्ड हो रहा है... | రికార్డ్ అవుతోంది...';
-                document.getElementById('voiceStatus').classList.add('recording');
-                document.getElementById('waveform').classList.add('active');
-                
-                // Disable other buttons
-                document.getElementById('playBtn').disabled = true;
-                document.getElementById('deleteBtn').disabled = true;
+                try {
+                    console.log('▶️ Starting recording...');
+                    
+                    // Clear previous recording
+                    audioChunks = [];
+                    if (recordedAudioBlob) {
+                        URL.revokeObjectURL(document.getElementById('audioPlayback').src);
+                        recordedAudioBlob = null;
+                    }
+                    
+                    // Start recording
+                    mediaRecorder.start(1000); // Collect data every second
+                    isRecording = true;
+                    
+                    // Update UI
+                    this.classList.add('recording');
+                    document.getElementById('recordText').textContent = 'Stop Recording | रोकें | ఆపండి';
+                    document.getElementById('voiceStatus').textContent = 'Recording... Speak now! | रिकॉर्ड हो रहा है... बोलें! | రికార్డ్ అవుతోంది... మాట్లాడండి!';
+                    document.getElementById('voiceStatus').classList.add('recording');
+                    document.getElementById('waveform').classList.add('active');
+                    
+                    // Disable other buttons
+                    document.getElementById('playBtn').disabled = true;
+                    document.getElementById('deleteBtn').disabled = true;
+                    document.getElementById('audioPlayer').classList.remove('show');
+                    
+                    console.log('✅ Recording started successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Error starting recording:', error);
+                    document.getElementById('voiceStatus').textContent = 
+                        'Failed to start recording | रिकॉर्डिंग शुरू नहीं हो सकी | రికార్డింగ్ ప్రారంభించడంలో విఫలమైంది';
+                }
                 
             } else {
-                // Stop recording
-                mediaRecorder.stop();
-                isRecording = false;
-                
-                // Update UI
-                this.classList.remove('recording');
-                document.getElementById('recordText').textContent = 'Start Recording | रिकॉर्ड करें | రికార్డ్ చేయండి';
-                document.getElementById('voiceStatus').classList.remove('recording');
-                document.getElementById('waveform').classList.remove('active');
+                try {
+                    console.log('⏹️ Stopping recording...');
+                    
+                    // Stop recording
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    
+                    // Update UI
+                    this.classList.remove('recording');
+                    document.getElementById('recordText').textContent = 'Start Recording | रिकॉर्ड करें | రికార్డ్ చేయండి';
+                    document.getElementById('voiceStatus').textContent = 'Processing audio... | ऑडियो प्रोसेस हो रहा है... | ఆడియో ప్రాసెస్ అవుతోంది...';
+                    document.getElementById('voiceStatus').classList.remove('recording');
+                    document.getElementById('waveform').classList.remove('active');
+                    
+                    console.log('✅ Recording stopped successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Error stopping recording:', error);
+                    document.getElementById('voiceStatus').textContent = 
+                        'Error stopping recording | रिकॉर्डिंग रोकने में त्रुटि | రికార్డింగ్ ఆపడంలో లోపం';
+                }
             }
         });
 
