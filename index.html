@@ -85,23 +85,25 @@
         .emoji-rating {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
+            gap: 8px;
+            flex-wrap: nowrap;
             margin-bottom: 20px;
+            overflow-x: auto;
         }
 
         .emoji-option {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding: 15px;
+            gap: 6px;
+            padding: 12px 8px;
             border: 3px solid #ddd;
-            border-radius: 15px;
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
             background: white;
-            min-width: 80px;
+            min-width: 70px;
+            flex-shrink: 0;
         }
 
         .emoji-option:hover {
@@ -119,15 +121,15 @@
         }
 
         .emoji {
-            font-size: 2.5em;
-            margin-bottom: 5px;
+            font-size: 2.2em;
+            margin-bottom: 3px;
         }
 
         .emoji-label {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 600;
             text-align: center;
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
         .emoji-option input[type="radio"] {
@@ -209,6 +211,42 @@
             line-height: 1.4;
         }
 
+        .location-info {
+            background: #f0f8f0;
+            border: 1px solid #4CAF50;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #2e7d32;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .location-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .location-detected {
+            background: #c8e6c9;
+            color: #1b5e20;
+        }
+
+        .location-error {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        .location-loading {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -223,20 +261,21 @@
             }
             
             .emoji-rating {
-                gap: 10px;
+                gap: 5px;
+                padding: 0 5px;
             }
             
             .emoji-option {
                 min-width: 60px;
-                padding: 10px;
+                padding: 10px 6px;
             }
             
             .emoji {
-                font-size: 2em;
+                font-size: 1.8em;
             }
             
             .emoji-label {
-                font-size: 11px;
+                font-size: 9px;
             }
         }
     </style>
@@ -252,11 +291,6 @@
         </div>
 
         <div class="form-container">
-            <div class="qr-info">
-                📱 <strong>QR Code Access | QR कोड एक्सेस | QR కోడ్ యాక్సెస్:</strong><br>
-                Share this form easily | आसानी से साझा करें | సులభంగా షేర్ చేయండి
-            </div>
-
             <div class="anonymous-note">
                 🔒 <strong>Anonymous Feedback | गुमनाम फीडबैक | అనామక ఫీడ్‌బ్యాక్:</strong><br>
                 This form is completely anonymous | यह फॉर्म पूरी तरह से गुमनाम है | ఈ ఫారమ్ పూర్తిగా అనామకం
@@ -319,6 +353,14 @@
                     Submit Feedback | फीडबैक भेजें | ఫీడ్‌బ్యాక్ పంపండి
                 </button>
             </form>
+
+            <div class="location-info">
+                📍 <strong>Location Detection | स्थान का पता लगाना | స్థాన గుర్తింపు</strong><br>
+                <span id="locationStatus" class="location-status location-loading">
+                    Getting your location... | आपका स्थान प्राप्त कर रहे हैं... | మీ స్థానాన్ని పొందుతున్నాము...
+                </span>
+                <div id="locationDetails" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+            </div>
 
             <div class="success-message" id="successMessage">
                 <h3>✅ Thank you for your feedback!</h3>
@@ -392,15 +434,28 @@
         // Generate QR Code functionality
         function generateQRCode() {
             const currentURL = window.location.href;
-            console.log('Generate QR code for:', currentURL);
-            alert('QR Code would be generated for: ' + currentURL + '\n\nYou can use any QR code generator service to create a code linking to this form.');
+            const qrDisplay = document.getElementById('qr-display');
+            
+            // Use QR Server API to generate QR code
+            const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentURL)}`;
+            
+            qrDisplay.innerHTML = `
+                <div style="background: white; padding: 15px; border-radius: 10px; display: inline-block; margin: 10px 0;">
+                    <img src="${qrCodeURL}" alt="QR Code" style="display: block; margin: 0 auto;">
+                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+                        Scan to access form<br>
+                        फॉर्म एक्सेस करने के लिए स्कैन करें<br>
+                        ఫారమ్ యాక్సెస్ చేయడానికి స్కాన్ చేయండి
+                    </p>
+                    <p style="margin: 10px 0 0 0; font-size: 11px; color: #999; word-break: break-all;">
+                        ${currentURL}
+                    </p>
+                </div>
+            `;
+            
+            // Hide the button after generating
+            event.target.style.display = 'none';
         }
-
-        // Add QR generation button functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const qrInfo = document.querySelector('.qr-info');
-            qrInfo.innerHTML += '<br><button onclick="generateQRCode()" style="margin-top: 10px; padding: 8px 16px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer;">Generate QR Code | QR कोड बनाएं | QR కోడ్ రూపొందించండి</button>';
-        });
     </script>
 </body>
 </html>
